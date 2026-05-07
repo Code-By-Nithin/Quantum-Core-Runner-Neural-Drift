@@ -10,6 +10,8 @@ Quantum Core Runner is a futuristic reflex game where you control a glowing core
 - Dynamic speed scaling and obstacle avoidance
 - Cyberpunk glassmorphism UI with countdown and game over screens
 - Camera status feedback and blink-based menu selection
+<img width="1280" height="832" alt="Gemini_Generated_Image_2iskbn2iskbn2isk" src="https://github.com/user-attachments/assets/9201f580-d02c-405f-8b57-cab381317974" />
+
 
 ## How to Run
 
