@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quantum Core Runner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      background: #050505; 
+      font-family: 'Inter', sans-serif; 
+      touch-action: none;
+      color: #fff;
+    }
+    
+    /* GLASSMORPHISM UI */
+    .glass-panel {
+      background: rgba(10, 15, 30, 0.4);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 255, 255, 0.2);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px 0 rgba(0, 255, 255, 0.1);
+    }
+    
+    #timer {
+      position: absolute;
+      top: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 25px;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      user-select: none;
+      z-index: 10;
+      display: none;
+    }
+    
+    #timer span {
+      color: #00ffff;
+      text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+    
+    #speedDisplay {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 5px 15px;
+      color: #ff00ff;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      user-select: none;
+      z-index: 10;
+      display: none;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 0, 255, 0.3);
+      background: rgba(255, 0, 255, 0.05);
+    }
+
+    #gameOverScreen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 50px 60px;
+      text-align: center;
+      display: none;
+      user-select: none;
+      z-index: 20;
+      width: 400px;
+    }
+    
+    #gameOverScreen h2 {
+      font-size: 36px;
+      margin-top: 0;
+      color: #ff0055;
+      text-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
+      text-transform: uppercase;
+      letter-spacing: 4px;
+    }
+
+    #pointsDisplay {
+      font-size: 20px;
+      margin-bottom: 40px;
+      color: #ccc;
+      font-weight: 300;
+    }
+    
+    #pointsDisplay span {
+      color: #00ffff;
+      font-weight: 600;
+    }
+
+    .option-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .option {
+      font-size: 18px;
+      padding: 15px 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      cursor: default;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      user-select: none;
+      background: rgba(255, 255, 255, 0.05);
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .option.selected {
+      background-color: rgba(0, 255, 255, 0.2);
+      border-color: #00ffff;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.4), inset 0 0 10px rgba(0, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+
+    #confirmationDialog {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 40px;
+      display: none;
+      z-index: 30;
+      text-align: center;
+      width: 350px;
+    }
+
+    #confirmationDialog p {
+      font-size: 18px;
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+
+    .confirm-btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .confirmBtn {
+      padding: 12px 30px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    #confirmYes {
+      background: #00ffff;
+      color: #000;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    }
+
+    #confirmNo {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .confirmBtn:hover {
+      transform: translateY(-2px);
+    }
+
+    #cameraStatus {
+      position: absolute;
+      bottom: 25px;
+      left: 25px;
+      padding: 10px 20px;
+      font-size: 12px;
+      z-index: 10;
+      letter-spacing: 1px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    #startScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      text-align: center;
+      background: radial-gradient(circle at center, transparent 0%, #020205 100%);
+    }
+    
+    .start-panel {
+      padding: 60px 80px;
+      max-width: 600px;
+    }
+
+    h1 {
+      font-size: 48px;
+      font-weight: 800;
+      margin: 0 0 20px 0;
+      background: linear-gradient(90deg, #00ffff, #ff00ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #instructions {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #aaa;
+      margin-bottom: 40px;
+    }
+    
+    #instructions span {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    #countdown {
+      font-size: 80px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #00ffff, #fff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 20px 0;
+      display: none;
+      filter: drop-shadow(0 0 20px rgba(0, 255, 255, 0.5));
+    }
+
+    #blinkHint {
+      font-size: 18px;
+      font-weight: 600;
+      color: #ff00ff;
+      margin-top: 20px;
+      display: none;
+      animation: pulse 1.5s infinite alternate;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; text-shadow: 0 0 5px rgba(255, 0, 255, 0.5); }
+      100% { opacity: 1; text-shadow: 0 0 20px rgba(255, 0, 255, 1); }
+    }
+
+    #startButton {
+      padding: 18px 50px;
+      font-size: 18px;
+      font-weight: 800;
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid #00ffff;
+      border-radius: 30px;
+      color: #fff;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(0, 255, 255, 0.1);
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    #startButton:hover {
+      background: rgba(0, 255, 255, 0.2);
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.4), inset 0 0 15px rgba(0, 255, 255, 0.2);
+      transform: translateY(-3px);
+    }
+
+    #cameraAccess {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 5, 10, 0.95);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      text-align: center;
+    }
+    
+    #cameraAccess h2 {
+      font-size: 32px;
+      color: #fff;
+      margin-bottom: 20px;
+    }
+    
+    #cameraAccess p {
+      color: #aaa;
+      font-size: 16px;
+      max-width: 400px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    #cameraAccess button {
+      padding: 15px 40px;
+      font-size: 16px;
+      font-weight: 600;
+      background: #fff;
+      border: none;
+      border-radius: 30px;
+      color: #000;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    #cameraAccess button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Post-processing canvas will be placed here */
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="cameraAccess">
+    <div class="glass-panel" style="padding: 50px;">
+      <h2>Camera Access Required</h2>
+      <p>This game uses advanced face mesh tracking to monitor your head movements.</p>
+      <p>Please allow camera access to experience the game.</p>
+      <button id="enableCamera">Enable Camera</button>
+    </div>
+  </div>
+
+  <div id="timer" class="glass-panel">Time: <span>0.00</span>s</div>
+  <div id="speedDisplay">Speed: 1.0x</div>
+  
+  <div id="gameOverScreen" class="glass-panel">
+    <h2>System Failure</h2>
+    <div id="pointsDisplay">Survived: <span>0.00</span>s</div>
+    <div class="option-container">
+      <div id="restartOption" class="option selected">Reboot System</div>
+      <div id="exitOption" class="option">Disconnect</div>
+    </div>
+  </div>
+  
+  <div id="confirmationDialog" class="glass-panel">
+    <p>Are you sure you want to disconnect?</p>
+    <div class="confirm-btn-group">
+      <button id="confirmYes" class="confirmBtn">Yes</button>
+      <button id="confirmNo" class="confirmBtn">No</button>
+    </div>
+  </div>
+  
+  <div id="startScreen">
+    <div class="glass-panel start-panel">
+      <h1>Quantum Core<br/>Runner</h1>
+      <div id="instructions">
+        <p>Control the core by <span>tilting your head</span> left or right.</p>
+        <p>Avoid anomalies and survive the quantum void.</p>
+        <p>System speed will increase dynamically.</p>
+      </div>
+      <div id="blinkHint">Blink twice to initiate</div>
+      <div id="countdown"></div>
+      <button id="startButton">Initialize</button>
+    </div>
+  </div>
+  
+  <div id="cameraStatus" class="glass-panel">Initializing Sensors...</div>
+
+  <video id="video" width="640" height="480" autoplay muted playsinline style="display:none"></video>
+
+  <!-- Mediapipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  
+  <!-- Three.js Core & Post-Processing -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/ShaderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/shaders/CopyShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/shaders/LuminosityHighPassShader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/postprocessing/UnrealBloomPass.js"></script>
+
+  <script>
+    // === THREE.JS SETUP ===
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x020205, 0.015);
+    
+    // Camera
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 3, 8);
+    camera.lookAt(0, 0, -10);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+    renderer.setClearColor(0x020205);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    document.body.appendChild(renderer.domElement);
+
+    // Post-Processing (Bloom)
+    const renderScene = new THREE.RenderPass(scene, camera);
+    const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+    bloomPass.threshold = 0.1;
+    bloomPass.strength = 1.8;
+    bloomPass.radius = 0.5;
+
+    const composer = new THREE.EffectComposer(renderer);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+
+    // === ENVIRONMENT ===
+    // Endless glowing floor grid
+    const gridHelper = new THREE.GridHelper(200, 100, 0x00ffff, 0x001133);
+    gridHelper.position.y = -1;
+    scene.add(gridHelper);
+    
+    // Floating dust particles
+    const dustGeometry = new THREE.BufferGeometry();
+    const dustCount = 1500;
+    const dustPositions = new Float32Array(dustCount * 3);
+    for(let i = 0; i < dustCount * 3; i+=3) {
+      dustPositions[i] = (Math.random() - 0.5) * 50;
+      dustPositions[i+1] = Math.random() * 20;
+      dustPositions[i+2] = (Math.random() - 0.5) * 100 - 20;
+    }
+    dustGeometry.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+    const dustMaterial = new THREE.PointsMaterial({
+      color: 0x00ffff,
+      size: 0.1,
+      transparent: true,
+      opacity: 0.4,
+      blending: THREE.AdditiveBlending
+    });
+    const dust = new THREE.Points(dustGeometry, dustMaterial);
+    scene.add(dust);
+
+    // Dynamic background lines (cyber tunnel effect)
+    const linesGroup = new THREE.Group();
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff00ff, transparent: true, opacity: 0.2 });
+    for(let i = 0; i < 20; i++) {
+      const pts = [];
+      pts.push(new THREE.Vector3(-20, i * 2 - 10, -100));
+      pts.push(new THREE.Vector3(-20, i * 2 - 10, 50));
+      const geom = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geom, lineMaterial);
+      linesGroup.add(line);
+      
+      const pts2 = [];
+      pts2.push(new THREE.Vector3(20, i * 2 - 10, -100));
+      pts2.push(new THREE.Vector3(20, i * 2 - 10, 50));
+      const geom2 = new THREE.BufferGeometry().setFromPoints(pts2);
+      const line2 = new THREE.Line(geom2, lineMaterial);
+      linesGroup.add(line2);
+    }
+    scene.add(linesGroup);
+
+    // === ADVANCED PLAYER CORE ===
+    const coreGroup = new THREE.Group();
+    coreGroup.position.set(0, 0, 0); // Position controlled by game loop
+    scene.add(coreGroup);
+    
+    // Inner glowing core
+    const innerCoreGeometry = new THREE.IcosahedronGeometry(0.5, 2);
+    const innerCoreMaterial = new THREE.MeshBasicMaterial({ 
+      color: 0x00ffff,
+    });
+    const innerCore = new THREE.Mesh(innerCoreGeometry, innerCoreMaterial);
+    coreGroup.add(innerCore);
+    
+    // Refractive Glass Shell
+    const shellGeometry = new THREE.SphereGeometry(1.2, 32, 32);
+    const shellMaterial = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transmission: 0.9,
+      opacity: 1,
+      metalness: 0,
+      roughness: 0.1,
+      ior: 1.5,
+      thickness: 0.5,
+      specularIntensity: 1,
+      specularColor: new THREE.Color(0xffffff),
+      clearcoat: 1,
+      clearcoatRoughness: 0.1,
+      side: THREE.DoubleSide
+    });
+    const shell = new THREE.Mesh(shellGeometry, shellMaterial);
+    coreGroup.add(shell);
+
+    // Particle Trail
+    const trailCount = 60;
+    const trailGeometry = new THREE.BufferGeometry();
+    const trailPositions = new Float32Array(trailCount * 3);
+    const trailSizes = new Float32Array(trailCount);
+    for(let i=0; i<trailCount; i++) {
+      trailSizes[i] = (1 - i/trailCount) * 2;
+    }
+    trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+    trailGeometry.setAttribute('size', new THREE.BufferAttribute(trailSizes, 1));
+    
+    // Custom shader for trail to use sizes
+    const trailShaderMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        color: { value: new THREE.Color(0x00ffff) }
+      },
+      vertexShader: `
+        attribute float size;
+        varying float vOpacity;
+        void main() {
+          vOpacity = size / 2.0;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (300.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        varying float vOpacity;
+        void main() {
+          float dist = length(gl_PointCoord - vec2(0.5));
+          if(dist > 0.5) discard;
+          gl_FragColor = vec4(color, vOpacity * (0.5 - dist));
+        }
+      `,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+    
+    const trail = new THREE.Points(trailGeometry, trailShaderMaterial);
+    scene.add(trail);
+
+    // === LIGHTING ===
+    const ambientLight = new THREE.AmbientLight(0x000022, 1.0);
+    scene.add(ambientLight);
+
+    const coreLight = new THREE.PointLight(0x00ffff, 2, 20);
+    coreGroup.add(coreLight);
+
+    // === ADVANCED OBSTACLES ===
+    const lanes = [-4, 0, 4];
+    
+    const neonMaterials = [
+      new THREE.MeshStandardMaterial({ color: 0xff0040, emissive: 0xff0040, emissiveIntensity: 2, roughness: 0.2, metalness: 0.8 }),
+      new THREE.MeshStandardMaterial({ color: 0xff00ff, emissive: 0xff00ff, emissiveIntensity: 2, roughness: 0.2, metalness: 0.8 }),
+      new THREE.MeshStandardMaterial({ color: 0xffff00, emissive: 0xffff00, emissiveIntensity: 2, roughness: 0.2, metalness: 0.8 })
+    ];
+
+    const obstacleGeometries = [
+      new THREE.TorusKnotGeometry(0.8, 0.2, 100, 16),
+      new THREE.OctahedronGeometry(1.2, 0),
+      new THREE.IcosahedronGeometry(1.2, 0)
+    ];
+
+    const obstacles = [];
+    const obstaclesPool = [];
+    const maxObstacles = 15;
+    
+    for(let i = 0; i < maxObstacles * 2; i++) {
+      const geom = obstacleGeometries[i % obstacleGeometries.length];
+      const mat = neonMaterials[i % neonMaterials.length];
+      
+      const obsGroup = new THREE.Group();
+      
+      // The glowing shape
+      const mesh = new THREE.Mesh(geom, mat);
+      obsGroup.add(mesh);
+      
+      // Outer wireframe shell
+      const wireMat = new THREE.LineBasicMaterial({ color: mat.color, transparent: true, opacity: 0.5 });
+      const wireMesh = new THREE.LineSegments(new THREE.EdgesGeometry(geom), wireMat);
+      wireMesh.scale.set(1.1, 1.1, 1.1);
+      obsGroup.add(wireMesh);
+      
+      obsGroup.visible = false;
+      
+      // Store custom rotation speeds
+      obsGroup.userData = {
+        rotX: (Math.random() - 0.5) * 5,
+        rotY: (Math.random() - 0.5) * 5,
+        mesh: mesh,
+        wire: wireMesh
+      };
+      
+      scene.add(obsGroup);
+      obstaclesPool.push(obsGroup);
+    }
+
+    function getObstacle() {
+      for(let i = 0; i < obstaclesPool.length; i++) {
+        if(!obstaclesPool[i].visible) return obstaclesPool[i];
+      }
+      return obstaclesPool[0]; // fallback
+    }
+
+    function spawnObstacle(zPos) {
+      const obstacle = getObstacle();
+      obstacle.position.z = zPos;
+      obstacle.position.x = lanes[Math.floor(Math.random() * lanes.length)];
+      obstacle.position.y = 1;
+      obstacle.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+      obstacle.visible = true;
+      
+      if(!obstacles.includes(obstacle)) {
+        obstacles.push(obstacle);
+      }
+    }
+
+    // === FACE MESH & CAMERA SETUP ===
+    const videoElement = document.getElementById('video');
+    const cameraStatus = document.getElementById('cameraStatus');
+    const cameraAccessScreen = document.getElementById('cameraAccess');
+    const enableCameraBtn = document.getElementById('enableCamera');
+
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    let blinkCount = 0;
+    let blinkStart = false;
+    let lastBlinkTime = 0;
+    const blinkTimeout = 1000;
+
+    function getEAR(landmarks, leftIndices, rightIndices) {
+      function calcEAR(eyePoints) {
+        const p1 = landmarks[eyePoints[1]];
+        const p5 = landmarks[eyePoints[5]];
+        const p2 = landmarks[eyePoints[2]];
+        const p4 = landmarks[eyePoints[4]];
+        const p0 = landmarks[eyePoints[0]];
+        const p3 = landmarks[eyePoints[3]];
+        const A = Math.hypot(p1.x - p5.x, p1.y - p5.y);
+        const B = Math.hypot(p2.x - p4.x, p2.y - p4.y);
+        const C = Math.hypot(p0.x - p3.x, p0.y - p3.y);
+        return (A + B) / (2.0 * C);
+      }
+      return (calcEAR(leftIndices) + calcEAR(rightIndices)) / 2.0;
+    }
+
+    const leftEyeIndices = [33, 160, 158, 133, 153, 144];
+    const rightEyeIndices = [362, 385, 387, 263, 373, 380];
+
+    // Smooth head tracking
+    let targetRollRaw = 0;
+    let targetRoll = 0; // Lerped value
+    let playerLane = 1; 
+
+    faceMesh.onResults((results) => {
+      if(results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+        const landmarks = results.multiFaceLandmarks[0];
+        
+        const leftEye = landmarks[33];
+        const rightEye = landmarks[263];
+        const dx = rightEye.x - leftEye.x;
+        const dy = rightEye.y - leftEye.y;
+        targetRollRaw = Math.atan2(dy, dx) * 2; 
+
+        const avgEAR = getEAR(landmarks, leftEyeIndices, rightEyeIndices);
+        const blinkThreshold = 0.25;
+        const now = performance.now();
+
+        if(avgEAR < blinkThreshold) {
+          if(!blinkStart) {
+            blinkStart = true;
+            if(now - lastBlinkTime < blinkTimeout) {
+              blinkCount++;
+              lastBlinkTime = now;
+            } else {
+              blinkCount = 1;
+              lastBlinkTime = now;
+            }
+          }
+        } else {
+          blinkStart = false;
+        }
+        
+        cameraStatus.textContent = "SENSORS ONLINE";
+        cameraStatus.style.color = "#00ffff";
+      } else {
+        cameraStatus.textContent = "TARGET LOST";
+        cameraStatus.style.color = "#ff0055";
+      }
+    });
+
+    let cameraFeed;
+
+    function startCamera() {
+      cameraFeed = new Camera(videoElement, {
+        onFrame: async () => {
+          try {
+            await faceMesh.send({ image: videoElement });
+          } catch (e) {
+            cameraStatus.textContent = "SENSOR ERROR";
+            cameraStatus.style.color = "#ff0055";
+          }
+        },
+        width: 640,
+        height: 480
+      });
+      
+      cameraFeed.start().then(() => {
+        cameraStatus.textContent = "SENSORS ONLINE";
+        cameraAccessScreen.style.display = 'none';
+      }).catch(err => {
+        alert("Failed to access camera. Please allow camera access to play.");
+      });
+    }
+
+    enableCameraBtn.addEventListener('click', startCamera);
+
+    // === GAME VARIABLES ===
+    let baseSpeed = 0.3;
+    let speedMultiplier = 1.0;
+    let speedIncreaseInterval = 10; // increase speed every 10 seconds
+    let lastSpeedIncreaseTime = 0;
+    
+    const timerElement = document.getElementById('timer');
+    const speedDisplay = document.getElementById('speedDisplay');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const pointsDisplay = document.getElementById('pointsDisplay').querySelector('span');
+    const restartOption = document.getElementById('restartOption');
+    const exitOption = document.getElementById('exitOption');
+    const options = [restartOption, exitOption];
+    const confirmationDialog = document.getElementById('confirmationDialog');
+    const confirmYes = document.getElementById('confirmYes');
+    const confirmNo = document.getElementById('confirmNo');
+    const startScreen = document.getElementById('startScreen');
+    const startButton = document.getElementById('startButton');
+    const countdownElement = document.getElementById('countdown');
+    const blinkHint = document.getElementById('blinkHint');
+
+    let gameOver = false;
+    let gameStarted = false;
+    let timeElapsed = 0;
+    let lastTime = performance.now();
+
+    let selectedOptionIndex = 0;
+
+    // === GAME FUNCTIONS ===
+    function updatePlayerLaneFromRoll(roll) {
+      if(roll > 0.4) playerLane = 2; // right
+      else if(roll < -0.4) playerLane = 0; // left
+      else playerLane = 1; // center
+    }
+
+    function resetGame() {
+      timeElapsed = 0;
+      lastTime = performance.now();
+      lastSpeedIncreaseTime = 0;
+      speedMultiplier = 1.0;
+      gameOver = false;
+      gameOverScreen.style.display = 'none';
+      
+      coreGroup.position.set(0, 1.2, 0);
+      innerCore.rotation.set(0, 0, 0);
+      shell.rotation.set(0, 0, 0);
+      
+      obstacles.forEach(obs => obs.visible = false);
+      obstacles.length = 0;
+      
+      for(let i = 0; i < maxObstacles; i++) {
+        spawnObstacle(-i * 25 - 20);
+      }
+      
+      selectedOptionIndex = 0;
+      options.forEach((opt, i) => opt.classList.toggle('selected', i === selectedOptionIndex));
+      
+      // Reset trail
+      const positions = trail.geometry.attributes.position.array;
+      for(let i=0; i<positions.length; i++) positions[i] = 0;
+      trail.geometry.attributes.position.needsUpdate = true;
+    }
+
+    function checkCollisions() {
+      for(let i = 0; i < obstacles.length; i++) {
+        const obs = obstacles[i];
+        if(!obs.visible) continue;
+        
+        const distZ = obs.position.z - coreGroup.position.z;
+        // Tighter hit box
+        if(Math.abs(distZ) < 1.8 && Math.abs(obs.position.x - coreGroup.position.x) < 1.5) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // === BLINK SELECTION SYSTEM ===
+    function updateOptionSelection() {
+      if(targetRoll > 0.4) selectedOptionIndex = 1;
+      else selectedOptionIndex = 0;
+      
+      options.forEach((opt, i) => {
+        opt.classList.toggle('selected', i === selectedOptionIndex);
+      });
+    }
+
+    function handleBlinkSelection() {
+      if(blinkCount >= 2) {
+        if(selectedOptionIndex === 0) {
+          resetGame();
+        } else {
+          confirmationDialog.style.display = 'block';
+          gameOverScreen.style.display = 'none';
+        }
+        blinkCount = 0;
+      }
+    }
+
+    // === START GAME ===
+    function startCountdown() {
+      blinkHint.style.display = 'none';
+      countdownElement.style.display = 'block';
+      
+      let count = 3;
+      countdownElement.textContent = count;
+      
+      const countdownInterval = setInterval(() => {
+        count--;
+        if(count > 0) {
+          countdownElement.textContent = count;
+        } else {
+          clearInterval(countdownInterval);
+          startGame();
+        }
+      }, 1000);
+    }
+
+    function startGame() {
+      startScreen.style.display = 'none';
+      timerElement.style.display = 'block';
+      speedDisplay.style.display = 'block';
+      gameStarted = true;
+      resetGame();
+    }
+
+    // === EVENT LISTENERS ===
+    confirmYes.addEventListener('click', () => {
+      window.location.href = 'index.php'; // Or whatever fallback
+    });
+    
+    confirmNo.addEventListener('click', () => {
+      confirmationDialog.style.display = 'none';
+      gameOverScreen.style.display = 'block';
+    });
+
+    startButton.addEventListener('click', () => {
+      startButton.style.display = 'none';
+      blinkHint.style.display = 'block';
+      
+      const blinkCheck = setInterval(() => {
+        if(blinkCount >= 2) {
+          clearInterval(blinkCheck);
+          startCountdown();
+        }
+      }, 100);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if(document.hidden) lastTime = performance.now();
+    });
+
+    // === ANIMATION LOOP ===
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const now = performance.now();
+      const delta = Math.min((now - lastTime) / 1000, 0.1); // cap delta
+      lastTime = now;
+
+      // Lerp head tracking for smoothness
+      targetRoll += (targetRollRaw - targetRoll) * 10 * delta;
+
+      if(gameStarted && !gameOver) {
+        timeElapsed += delta;
+        timerElement.querySelector('span').textContent = timeElapsed.toFixed(2);
+        
+        if(timeElapsed - lastSpeedIncreaseTime > speedIncreaseInterval) {
+          speedMultiplier += 0.15;
+          lastSpeedIncreaseTime = timeElapsed;
+          speedDisplay.textContent = `Speed: ${speedMultiplier.toFixed(2)}x`;
+        }
+
+        updatePlayerLaneFromRoll(targetRoll);
+
+        // Smooth X movement
+        const targetX = lanes[playerLane];
+        coreGroup.position.x += (targetX - coreGroup.position.x) * 12 * delta;
+        
+        // Inner core fast rotation
+        const forwardSpeed = baseSpeed * speedMultiplier * delta * 150;
+        innerCore.rotation.x -= forwardSpeed * 0.1;
+        innerCore.rotation.y += forwardSpeed * 0.05;
+        
+        // Shell rotation (slower)
+        shell.rotation.x -= forwardSpeed * 0.05;
+        
+        // Dynamic camera tracking
+        camera.position.x += (coreGroup.position.x * 0.3 - camera.position.x) * 5 * delta;
+        // Camera tilt based on movement
+        camera.rotation.z = (coreGroup.position.x - targetX) * -0.05;
+
+        // Animate Grid
+        gridHelper.position.z = (gridHelper.position.z + forwardSpeed * 0.2) % 10;
+        
+        // Animate Lines
+        linesGroup.position.z = (linesGroup.position.z + forwardSpeed * 0.5) % 20;
+
+        // Animate Dust
+        dust.rotation.y += delta * 0.05;
+
+        // Update trail
+        const trailPositions = trail.geometry.attributes.position.array;
+        for (let i = trailCount - 1; i > 0; i--) {
+          trailPositions[i * 3] = trailPositions[(i - 1) * 3];
+          trailPositions[i * 3 + 1] = trailPositions[(i - 1) * 3 + 1];
+          trailPositions[i * 3 + 2] = trailPositions[(i - 1) * 3 + 2];
+        }
+        trailPositions[0] = coreGroup.position.x;
+        trailPositions[1] = coreGroup.position.y;
+        trailPositions[2] = coreGroup.position.z + 1; // slightly behind
+        trail.geometry.attributes.position.needsUpdate = true;
+
+        // Update obstacles
+        for(let i = obstacles.length - 1; i >= 0; i--) {
+          const obs = obstacles[i];
+          obs.position.z += forwardSpeed * 0.3;
+          
+          // Custom rotations
+          obs.userData.mesh.rotation.x += obs.userData.rotX * delta;
+          obs.userData.mesh.rotation.y += obs.userData.rotY * delta;
+          obs.userData.wire.rotation.x -= obs.userData.rotX * delta;
+          obs.userData.wire.rotation.y -= obs.userData.rotY * delta;
+          
+          if(obs.position.z > 15) {
+            obs.visible = false;
+            obstacles.splice(i, 1);
+            
+            const farthestZ = obstacles.length > 0 ? obstacles.reduce((min, o) => Math.min(min, o.position.z), 0) : 0;
+            spawnObstacle(farthestZ - 20 - Math.random() * 15);
+          }
+        }
+
+        if(checkCollisions()) {
+          gameOver = true;
+          gameOverScreen.style.display = 'block';
+          pointsDisplay.textContent = timeElapsed.toFixed(2);
+        }
+      } else if(gameOver) {
+        // Slow down grid even in game over for effect
+        gridHelper.position.z = (gridHelper.position.z + delta * 2) % 10;
+        updateOptionSelection();
+        handleBlinkSelection();
+      }
+
+      // Render via Post-Processing
+      composer.render();
+    }
+
+    animate();
+  </script>
+</body>
+</html>
